@@ -2,34 +2,33 @@
 
 ## 一、架构图
 
-```
-                      联通 PON / 光猫（桥接模式）
-                              │ PPPoE（主路由拨号）
-                    ┌─────────┴──────────┐
-                    │   主路由 TP-LINK 企业路由   │
-                    │ LAN 192.168.231.1/24      │
-                    │ MAC 80-8F-1D-25-D7-AE     │
-                    │ fe80::828f:1dff:fe25:d7ae │
-                    │ IPv6: 2409:8a28:4e5:2ef0::/64 │
-                    │ DHCP 关闭 / RA 开启        │
-                    └────┬────────────┬─────┬───┘
-                         │   同一 L2 广播域（192.168.231.0/24）
-              ┌──────────┴───┐   ┌────┴───────────────────────┐
-              │  AC + AP（易展）│   │  旁路由 onecloud                │
-              │  纯二层，无网关  │   │  eth0 192.168.231.11/24       │
-              └──────┬───────┘   │  MAC F6-4B-57-A2-ED-1C（netplan 固定）
-                     │           │  fe80::f44b:57ff:fea2:ed1c     │
-        无线终端由此接入二层 ──────┤  GUA 2409:8a28:4e5:2ef0:f44b:57ff:fea2:ed1c │
-                     │           │  ULA fd00:231::1/64（静态）      │
-                     │           │  tailscale0 100.93.202.116      │
-                     │           │            fd7a:115c:a1e0::a536:ca74 │
-                     │           │  职责：DHCP / DNS / Tailscale 组网 / （计划中）sing-box 分流 │
-                     └───────────┴────────────────────────────────┘
+```mermaid
+flowchart TB
+    WAN["互联网（联通）"]
 
-  客户端默认路径：设备 → 网关 192.168.231.1（主路由）→ 直连出网
-  需代理设备（计划）：网关与 DNS 改指 192.168.231.11 → sing-box 分流，其余直连
-  IPv6 路径（现在与目标一致）：始终由主路由通告，终端走 fe80::828f… 出网
+    subgraph L2["同一 L2 广播域 192.168.231.0/24"]
+        MAIN["主路由 TP-LINK 企业路由<br/>LAN 192.168.231.1/24<br/>MAC 80-8F-1D-25-D7-AE<br/>LLA fe80::828f:1dff:fe25:d7ae<br/>IPv6 前缀 2409:8a28:4e5:2ef0::/64<br/>通告 RA + RDNSS / DHCP 已关闭<br/>管理页 tplogin.cn"]
+        AP["AC + AP（易展）<br/>纯二层，不提供网关/DNS"]
+        ONE["旁路由 onecloud（Armbian 26.8.3 / meson8b）<br/>eth0 192.168.231.11/24<br/>MAC F6-4B-57-A2-ED-1C（netplan 固定）<br/>LLA fe80::f44b:57ff:fea2:ed1c<br/>GUA 2409:8a28:4e5:2ef0:f44b:57ff:fea2:ed1c（SLAAC）<br/>ULA fd00:231::1/64（静态）<br/>tailscale0 100.93.202.116 / fd7a:115c:a1e0::a536:ca74<br/>dnsmasq（DHCP+DNS）· tailscaled · sing-box（未启用）"]
+        DEV["局域网终端<br/>m4000q .148 · MIS-AL00 .163 · Reno3 .120<br/>midea_ac .178 · BL602 .112 · 无名 .117 · oec .99"]
+    end
+
+    TS["Tailscale 尾网段<br/>onecloud.hale-city.ts.net<br/>已宣告子网路由 192.168.231.0/24"]
+
+    WAN ---|"光猫桥接，主路由 PPPoE 拨号"| MAIN
+    AP --- MAIN
+    ONE ---|"旁挂，不做默认网关"| MAIN
+    DEV ---|"有线直连"| MAIN
+    DEV -.->|"无线经二层"| AP
+    DEV ==>|"IPv4 默认：网关/DNS = 192.168.231.1 直连出网"| MAIN
+    DEV -.->|"计划：代理设备网关/DNS 改指 192.168.231.11"| ONE
+    DEV ==>|"IPv6：默认路由走 fe80::828f…（主路由）"| MAIN
+    ONE --- TS
+    ONE -.->|"待关闭：RA 通告 fd00:231::/64 + 第二条默认路由（见第五节）"| DEV
 ```
+
+路径要点：客户端 IPv4 与 IPv6 的正常出口都在主路由；旁路由只提供 DHCP/DNS/组网，需代理的设备由 dnsmasq 按 tag 改指 `192.168.231.11`。
+
 
 ## 二、主路由 TP-LINK（192.168.231.1）
 
