@@ -5,30 +5,50 @@
 ```mermaid
 flowchart TB
     WAN["互联网（联通）"]
+    ONT["光猫（桥接）"]
 
     subgraph L2["同一 L2 广播域 192.168.231.0/24"]
-        MAIN["主路由 TP-LINK 企业路由<br/>LAN 192.168.231.1/24<br/>MAC 80-8F-1D-25-D7-AE<br/>LLA fe80::828f:1dff:fe25:d7ae<br/>IPv6 前缀 2409:8a28:4e5:2ef0::/64<br/>通告 RA + RDNSS / DHCP 已关闭<br/>管理页 tplogin.cn"]
-        AP["AC + AP（易展）<br/>纯二层，不提供网关/DNS"]
-        ONE["旁路由 onecloud（Armbian 26.8.3 / meson8b）<br/>eth0 192.168.231.11/24<br/>MAC F6-4B-57-A2-ED-1C（netplan 固定）<br/>LLA fe80::f44b:57ff:fea2:ed1c<br/>GUA 2409:8a28:4e5:2ef0:f44b:57ff:fea2:ed1c（SLAAC）<br/>ULA fd00:231::1/64（静态）<br/>tailscale0 100.93.202.116 / fd7a:115c:a1e0::a536:ca74<br/>dnsmasq（DHCP+DNS）· tailscaled · sing-box（未启用）"]
-        DEV["局域网终端<br/>m4000q .148 · MIS-AL00 .163 · Reno3 .120<br/>midea_ac .178 · BL602 .112 · 无名 .117 · oec .99"]
+        MAIN["主路由 TP-LINK<br/>192.168.231.1"]
+        AP["AC + AP（易展）"]
+        ONE["旁路由 onecloud<br/>192.168.231.11"]
+        DEV["局域网终端"]
     end
 
-    TS["Tailscale 尾网段<br/>onecloud.hale-city.ts.net<br/>已宣告子网路由 192.168.231.0/24"]
+    TS["Tailscale 网<br/>100.93.202.116"]
 
-    WAN ---|"光猫桥接，主路由 PPPoE 拨号"| MAIN
-    AP --- MAIN
-    ONE ---|"旁挂，不做默认网关"| MAIN
-    DEV ---|"有线直连"| MAIN
-    DEV -.->|"无线经二层"| AP
-    DEV ==>|"IPv4 默认：网关/DNS = 192.168.231.1 直连出网"| MAIN
-    DEV -.->|"计划：代理设备网关/DNS 改指 192.168.231.11"| ONE
-    DEV ==>|"IPv6：默认路由走 fe80::828f…（主路由）"| MAIN
+    WAN --- ONT --- MAIN
+    MAIN --- AP --- DEV
+    MAIN --- ONE
+    DEV ==>|"默认网关 / DNS"| MAIN
     ONE --- TS
-    ONE -.->|"待关闭：RA 通告 fd00:231::/64 + 第二条默认路由（见第五节）"| DEV
+    ONE -.->|"计划：代理设备改指 .11"| DEV
+    ONE -.->|"待关闭：RA 通告 fd00:231::/64"| DEV
 ```
 
-路径要点：客户端 IPv4 与 IPv6 的正常出口都在主路由；旁路由只提供 DHCP/DNS/组网，需代理的设备由 dnsmasq 按 tag 改指 `192.168.231.11`。
+### 链路关系
 
+| 链路 | 关系 | 说明 |
+|---|---|---|
+| 光猫 ↔ 主路由 | PPPoE | 光猫桥接，主路由拨号；主路由已拿到联通 IPv6 前缀 |
+| 主路由 ↔ AC+AP ↔ 终端 | 纯二层 | AP 不提供网关与 DNS |
+| 主路由 ↔ 旁路由 | 同段旁挂 | 旁路由不做默认网关 |
+| 终端 → 主路由 | IPv4/IPv6 默认出口 | 网关与 DNS 均为 `192.168.231.1`；IPv6 下一跳 `fe80::828f…` |
+| 终端 → 旁路由（计划） | 仅代理设备 | dnsmasq 按 `tag:proxy_devices` 改发 `option 3/6 = 192.168.231.11` |
+| 旁路由 ↔ Tailscale | 子网路由 | 已宣告 `192.168.231.0/24` |
+| 旁路由 → 终端（待关闭） | 多余 RA | 通告 `fd00:231::/64` 与第二条默认路由，即第五节故障 |
+
+### 终端在册（旁路由 DHCP 租约，实测）
+
+| 主机名 | IPv4 | MAC | 备注 |
+|---|---|---|---|
+| m4000q | 192.168.231.148 | 84-7B-57-21-B8-B2 | 本机 Windows：Wi-Fi 6 → 网桥 → Hyper-V 外部交换机 |
+| MIS-AL00 | 192.168.231.163 | CC-B0-A8-DF-55-20 | 华为设备，随机 MAC |
+| OPPO-Reno3-Pro-5G | 192.168.231.120 | 6E-5A-59-9C-CD-11 | 随机 MAC |
+| midea_ac_1363 | 192.168.231.178 | BC-89-F8-C1-E4-AE | 美的空调 |
+| Bouffalolab_BL602-5262ad | 192.168.231.112 | 7C-B9-4C-52-62-AD | IoT |
+| 无名 | 192.168.231.117 | 68-77-24-8D-2D-BB | 待确认，曾触发单播 RA |
+| oec | 192.168.231.99 | DA-43-B1-F8-F7-78 | 静态租约 |
+| woniu | 192.168.231.100 | 00-E2-69-13-C0-64 | 静态租约；本次无租约（关机），knockd WoL 目标 |
 
 ## 二、主路由 TP-LINK（192.168.231.1）
 
@@ -68,7 +88,6 @@ flowchart TB
 | 下发给普通客户端 | `option 3 = 192.168.231.1`、`option 6 = 192.168.231.1`、`option 138 = 192.168.231.1`、`option 60 = TP-LINK`（即默认全部直连主路由） |
 | 代理设备标记 | `tag:proxy_devices` → `option:router/dns-server = 192.168.231.11`；当前唯一绑定该 tag 的 `dhcp-host` 行是注释状态，集合为空 |
 | IPv6 RA | 当前开启：`enable-ra`、`dhcp-range=::,constructor:eth0,ra-only,slaac,64,1d`、`dhcp-option=eth0,option6:dns-server,fd00:231::1` |
-| 在册客户端 | m4000q .148 / MIS-AL00 .163 / OPPO-Reno3-Pro-5G .120 / midea_ac_1363 .178 / Bouffalolab_BL602 .112 / 无名 .117（68:77:24:8D:2D:BB）/ oec .99 |
 | 其他服务 | sshd active；cron、rsyslog、netfilter-persistent、unattended-upgrades、wpa_supplicant、systemd-resolved/timesyncd、armbian-* 一组 enabled；knockd active（端口序列 51002,58004,54781 → `wakeonlan 00:E2:69:13:C0:64`）；NetworkManager 未安装 |
 
 设置要点（目标态）
