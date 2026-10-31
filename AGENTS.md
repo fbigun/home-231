@@ -14,7 +14,7 @@ flowchart TB
         DEV["局域网终端"]
     end
 
-    TS["Tailscale 网<br/>100.93.202.116"]
+    TS["tailnet（sing-box endpoint）"]
 
     WAN --- ONT --- MAIN
     MAIN --- AP --- DEV
@@ -34,7 +34,7 @@ flowchart TB
 | 主路由 ↔ 旁路由 | 同段旁挂 | 旁路由不做默认网关 |
 | 终端 → 主路由 | IPv4/IPv6 默认出口 | 网关与 DNS 均为 `192.168.231.1`；IPv6 下一跳 `fe80::828f…` |
 | 终端 → 旁路由（计划） | 仅代理设备 | dnsmasq 按 `tag:proxy_devices` 改发 `option 3/6 = 192.168.231.11` |
-| 旁路由 ↔ Tailscale | 子网路由 | 已宣告 `192.168.231.0/24` |
+| 旁路由 ↔ tailnet | sing-box tailscale endpoint | 子网路由 `192.168.231.0/24` 已宣告并经管理台批准（2026-10-31）；对端入站可达 LAN（实测 sukean → .148:22000） |
 | 旁路由 → 终端 | 多余 RA（已关闭） | 曾通告 `fd00:231::/64` 与第二条默认路由（第五节故障）；2026-10-31 注释 dnsmasq RA 三行后停发，90s 抓包确认 |
 
 ### 终端在册（旁路由 DHCP 租约，实测）
@@ -82,36 +82,37 @@ flowchart TB
 | eth0 MAC | f6:4b:57:a2:ed:1c（`/etc/netplan/20-eth-fixed-mac.yaml` 固定，因此 fe80 地址稳定） |
 | eth0 IPv6 | GUA 2409:8a28:4e5:3d00:f44b:57ff:fea2:ed1c/64（SLAAC，由 networkd 用户态收 RA，路由 `proto ra metric 1024`）；静态 ULA fd00:231::1/64；LLA fe80::f44b:57ff:fea2:ed1c |
 | IPv6 学习 | `/etc/netplan/armbian.yaml`：`dhcp6: false`（不用 DHCPv6-PD），`eth0.accept_ra=0`（交给 systemd-networkd） |
-| 转发 | `net.ipv4.ip_forward=1`，`net.ipv6.conf.all.forwarding=1`（`/etc/sysctl.d/99-tailscale.conf`） |
-| 防火墙 | 只有 Tailscale 生成的持久化 ip(6)tables：`nat ts-postrouting` mark `0x40000/0xff0000` MASQUERADE、`filter ts-forward/ts-input`、`mangle` CONNMARK 恢复；FORWARD 策略 ACCEPT；无 nftables 规则集、无 sing-box redirect/tproxy 规则 |
-| tailscale | v1.104.2，active/enabled，`onecloud.hale-city.ts.net`，AllowedIPs 含 `192.168.231.0/24`（子网路由已宣告），节点密钥到期 2027-04-26 |
+| 转发 | `net.ipv4.ip_forward=1`，`net.ipv6.conf.all.forwarding=1`（`/etc/sysctl.d/99-forwarding.conf`，2026-10-31 由 99-tailscale.conf 改名，sysctl 已重载） |
+| 防火墙 | 空规则集（2026-10-31）：ts-\* 规则与 netfilter-persistent 已随 tailscale 清理一并移除，无持久化 ip(6)tables、无 nftables 规则集；FORWARD 策略 ACCEPT |
+| sing-box tailscale endpoint | active/enabled；新节点 NodeID `nAfhqG1tt221CNTRL`（auth key 注册，2026-10-31，旧节点 .116 已随 tailscaled 移除）；`advertise_routes=["192.168.231.0/24"]`、`accept_routes=true` 已批准；tun-in 栈 **gvisor**（mixed/system 栈在本机吞掉本机出站 TCP，已实测确认并绕开）；state 在 `/var/lib/sing-box/ts` |
 | DHCP 池 | 192.168.231.101–200/255.255.255.0/12h，`dhcp-authoritative`，`domain=lan`、`expand-hosts`、`dhcp-fqdn` |
 | 静态租约 | woniu 192.168.231.100（00:E2:69:13:C0:64）；oec 192.168.231.99（DA:43:B1:F8:F7:78）；AP 192.168.231.2（68-77-24-8D-2D-BB，2026-10-31 新增） |
-| DNS | :53，上游 223.5.5.5、119.29.29.29、2409:8028:2000::1111、2409:8028:2000::2222、100.100.100.100（尾网段，走 Tailscale）；`listen-address=192.168.231.11,127.0.0.1,100.93.202.116` |
+| DNS | :53，上游 223.5.5.5、119.29.29.29、2409:8028:2000::1111、2409:8028:2000::2222；`listen-address=192.168.231.11,127.0.0.1`；`/etc/resolv.conf` → `nameserver 127.0.0.1`；尾网段域名经 sing-box `taildns` 解析（dnsmasq 转发 → tun-in → hijack-dns，实测 `sukean` → 100.123.38.36） |
 | 下发给普通客户端 | `option 3 = 192.168.231.1`、`option 6 = 192.168.231.1`、`option 138 = 192.168.231.1`、`option 60 = TP-LINK`（即默认全部直连主路由） |
 | 代理设备标记 | `tag:proxy_devices` → `option:router/dns-server = 192.168.231.11`；当前唯一绑定该 tag 的 `dhcp-host` 行是注释状态，集合为空 |
 | IPv6 RA | 已关闭（2026-10-31）：`enable-ra`、`dhcp-range=::,constructor:eth0,ra-only,slaac,64,1d`、`dhcp-option=eth0,option6:dns-server,fd00:231::1` 三行已注释；备份在 `/etc/dnsmasq.conf.d-ra-backup/` |
-| 其他服务 | sshd active；cron、rsyslog、netfilter-persistent、unattended-upgrades、wpa_supplicant、systemd-resolved/timesyncd、armbian-* 一组 enabled；knockd active（端口序列 51002,58004,54781 → `wakeonlan 00:E2:69:13:C0:64`）；NetworkManager 未安装 |
+| 其他服务 | sshd active；cron、rsyslog、unattended-upgrades、systemd-resolved/timesyncd、armbian-* 一组 enabled（systemd-resolved 无 :53 监听，:53 由 dnsmasq 独占）；knockd active（端口序列 51002,58004,54781 → `wakeonlan 00:E2:69:13:C0:64`）；NetworkManager 未安装 |
 
 设置要点（目标态）
 
 1. IPv6 不由旁路由通告（已完成：RA 三行注释，2026-10-31），RA 与 RDNSS 全部交给主路由；脚本存档 `ipv6-fix/onecloud-dnsmasq-ra.sh`。
-2. 只由 dnsmasq + sing-box 两个软件承担分流：dnsmasq 负责"哪些设备走旁路由"，sing-box 负责转发；IPv6 保持直连不进隧道（RA 无法按设备区分）。入站形态定为 **TUN 先行**（`tun-in` auto_route，免 iptables、支持 UDP），redirect `lan-redir:7892` 留作回退；tun-in 只配了 IPv4 地址，与"IPv6 直连"天然一致。
-3. LAN→尾网段由 sing-box 的 tailscale endpoint 承担（`onecloud.json` 里 `100.64.0.0/10 + fd7a::/48 → tailnet`，NAT 层搞定回程，无需 SNAT）；tailscaled 子网路由+SNAT 是被替代的旧方案。
+2. 只由 dnsmasq + sing-box 两个软件承担分流（已落地 2026-10-31，tailscaled 已 purge）：dnsmasq 负责"哪些设备走旁路由"，sing-box 负责转发；IPv6 保持直连不进隧道（RA 无法按设备区分）。入站形态 **TUN 先行**（`tun-in` auto_route，栈 gvisor），redirect `lan-redir:7892` 留作回退；tun-in 只配了 IPv4 地址，与"IPv6 直连"天然一致。
+3. LAN→尾网段由 sing-box 的 tailscale endpoint 承担（`100.64.0.0/10 + fd7a::/48 → tailnet`，NAT 层搞定回程，无需 SNAT），出站实测通；`advertise_routes=192.168.231.0/24` 已批准，tailnet 对端入站可达 LAN（实测 sukean → .148:22000）。
 
 ## 四、旁路由已安装软件
 
 | 软件 | 版本 | 安装方式 | 状态 | 位置 / 备注 |
 |---|---|---|---|---|
 | dnsmasq | 2.91-1+deb13u2 | apt | active / enabled | `/etc/dnsmasq.conf`，DHCP + DNS；RA 三行已于 2026-10-31 注释关闭，新增 `dhcp-host=68-77-24-8D-2D-BB,192.168.231.2`（AP 静态绑定） |
-| tailscale / tailscaled | 1.104.2（含 tailscale-archive-keyring 1.35.181） | apt（官方源） | active / enabled | `tailscale0` 100.93.202.116、fd7a:115c:a1e0::a536:ca74；`/etc/default/tailscaled` PORT=41641；MagicDNS 写 resolvconf 失败（interface-name 不匹配），以 `server=100.100.100.100` 补偿 |
-| sing-box | 1.14.4（armhf deb，dpkg 状态 `hi` 已 hold；2026-10-31 由 1.12.23 升级） | apt/deb | inactive / disabled，从未运行 | `/usr/bin/sing-box`；unit `/usr/lib/systemd/system/sing-box.service`（User=sing-box，CAP_NET_ADMIN/RAW/NET_BIND_SERVICE/SYS_PTRACE，`-D /var/lib/sing-box -C /etc/sing-box`）；`/var/lib/sing-box` 尚不存在；`/etc/sing-box/config.json`（644，内含明文 shadowsocks PSK，启用前先 `chmod 600` 并轮换密钥）现有配置为 SS 服务端示例，`sing-box check` 在 1.14.4 下通过（exit 0）；升级方式：sagernet 源在板上拉不动（后端 403），本机下载 armhf deb、MD5 对过 apt 元数据后 scp + `dpkg -i` |
+| tailscale / tailscaled | 1.104.2（含 tailscale-archive-keyring 1.35.181） | apt（官方源） | **已 purge（2026-10-31）**，职责由 sing-box tailscale endpoint 接管 | 旧节点 `onecloud.hale-city.ts.net`（100.93.202.116）随 purge 失效；新节点见第三节 endpoint 行 |
+| sing-box | 1.14.4（armhf deb，dpkg 状态 `hi` 已 hold） | apt/deb | **active / enabled**（2026-10-31 启用） | unit `/usr/lib/systemd/system/sing-box.service`（User=sing-box，CAP_NET_ADMIN/RAW/NET_BIND_SERVICE/SYS_PTRACE，`-D /var/lib/sing-box -C /etc/sing-box`）；`/etc/sing-box/config.json`（600 root；auth key 已写入并消费，勿提交 git）；tailscale endpoint（state `/var/lib/sing-box/ts`）+ tun-in（gvisor）+ lan-redir:7892 并存；启动引导依赖直连 UDP 解析器 `boot=223.5.5.5`（`local` 链在旧 MagicDNS 残留时死锁）；升级方式：sagernet 源在板上拉不动（后端 403），本机下载 armhf deb、MD5 对过 apt 元数据后 scp + `dpkg -i` |
 | systemd-networkd + netplan | 随 Armbian | — | active / enabled | `/etc/netplan/armbian.yaml`、`/etc/netplan/20-eth-fixed-mac.yaml` |
 | knockd | 0.8-2+b4 | apt | active / enabled | WoL 触发（woniu） |
-| netfilter-persistent | 1.0.23 | apt | enabled | `/etc/iptables/rules.v4`、`rules.v6`，内容为 Tailscale 生成 |
+| systemd-resolved / systemd-timesyncd | 随 systemd | apt | enabled | resolved 存在但无 :53 监听（dnsmasq 独占）；timesyncd 对时 pool.ntp.org 实测同步正常（chrony 经评估无增益，不装） |
 | armbian-config / armbian-firmware / bsp-cli-onecloud | 26.8.x | Armbian 镜像 | — | 板级工具 |
-| wireguard-tools | 1.0.20210914-3 | apt | — | tailscale 依赖 |
 | tcpdump | 4.99.5 | apt | — | 诊断用 |
+
+2026-10-31 裁剪记录：purge 了 tailscale、tailscale-archive-keyring、wireguard-tools（与 tailscale 无依赖关系，纯手工装）、wpasupplicant、iw、wireless-regdb（板上无无线接口，死重）、netfilter-persistent（连带 iptables-persistent）；`/var/lib/tailscale` 已删除；迁移备份在板上 `/root/migration-backup-20261031/`。
 
 ## 五、已修复的故障（2026-10-31）
 
@@ -120,6 +121,7 @@ flowchart TB
 ## 六、待确认
 
 1. 代理设备清单：哪些 MAC 需要打上 `set:proxy_devices`（用户决定：透明代理建立前保持空集）。
-2. `onecloud.json` 部署：已按用户决定以 `tailscale.json` 为基础演进（tailscale endpoint 保留；入站 `tun-in` auto_route + `lan-redir:7892` 并存，TUN 先行、redirect 回退；`100.64.0.0/10 + fd7a::/48 → tailnet`），1.14.4 check 通过；**尚未写入 `/etc/sing-box/config.json`、未启动服务**。部署前需轮换 SS PSK 并 `chmod 600`；部署时先实测 tailscale0 与 tun-in 双 TUN 并存，异常即退 redirect 形态。
-3. LAN→尾网段：由 `onecloud.json` 的 tailnet endpoint 承担（sing-box NAT 层），不再需要 tailscaled 子网路由 + SNAT；tailscaled 是否退居管理面待部署后定。
+2. `onecloud.json` 已部署（2026-10-31）：写入 `/etc/sing-box/config.json` 并 enable --now，服务 active；auth key 已消费，config.json 600 root **勿提交 git**。迁移期备份：板上 `/root/migration-backup-20261031/`。
+3. LAN→尾网段：已由 sing-box tailnet endpoint 承担并实测通；tailscaled 已 purge，`/var/lib/tailscale` 已删，子网路由审批已迁移到新节点并批准。
 4. `.117` 已认定为 AP，静态绑定 `dhcp-host=68-77-24-8D-2D-BB,192.168.231.2` 已生效；AP 侧自身管理地址是否要从 `.117` 改到 `.2` 待观察（AC+AP 通常在主路由面板配置）。
+5. 旧节点 `.116`（onecloud）在管理台仍占一个设备名额，可手动删除；删除不影响新节点。
