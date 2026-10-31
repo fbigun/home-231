@@ -4,7 +4,7 @@
 
 ```mermaid
 flowchart TB
-    WAN["互联网（联通）"]
+    WAN["互联网（中国移动）"]
     ONT["光猫（桥接）"]
 
     subgraph L2["同一 L2 广播域 192.168.231.0/24"]
@@ -29,7 +29,7 @@ flowchart TB
 
 | 链路 | 关系 | 说明 |
 |---|---|---|
-| 光猫 ↔ 主路由 | PPPoE | 光猫桥接，主路由拨号；主路由已拿到联通 IPv6 前缀 |
+| 光猫 ↔ 主路由 | PPPoE | 光猫桥接，主路由拨号；主路由已拿到移动 IPv6 前缀 |
 | 主路由 ↔ AC+AP ↔ 终端 | 纯二层 | AP 不提供网关与 DNS |
 | 主路由 ↔ 旁路由 | 同段旁挂 | 旁路由不做默认网关 |
 | 终端 → 主路由 | IPv4/IPv6 默认出口 | 网关与 DNS 均为 `192.168.231.1`；IPv6 下一跳 `fe80::828f…` |
@@ -58,15 +58,18 @@ flowchart TB
 | LAN IPv4 | 192.168.231.1/24 |
 | LAN MAC | 80-8F-1D-25-D7-AE |
 | 链路本地 | fe80::828f:1dff:fe25:d7ae |
-| 通告前缀 | 2409:8a28:4e5:2ef0::/64 [onlink,auto]，valid 86400 / pref 14400 |
-| RDNSS | 2409:8a28:4e5:2ef0:828f:1dff:fe25:d7ae |
+| 通告前缀 | 2409:8a28:4e5:3d00::/64 [onlink,auto]，valid 86400 / pref 14400 |
+| RDNSS | 2409:8a28:4e5:3d00:828f:1dff:fe25:d7ae |
+| 出口公网 | IPv4 `39.182.8.9`、IPv6 `2409:8a28:4e5:3d00:…`，均归属浙江杭州移动（`myip.ipip.net` 实测）；未与主路由 WAN 显示值比对，不能判定 IPv4 是否独占 |
 | 管理页 | http://tplogin.cn （旁路由 dnsmasq 有 `address=/tplogin.cn/192.168.231.1`） |
 
 设置要点
 
-- WAN：光猫桥接 + 主路由 PPPoE 拨号；IPv6 已拿到联通前缀，状态健康。
+- WAN：光猫桥接 + 主路由 PPPoE 拨号；IPv6 已拿到移动前缀，状态健康。
+- 运营商是中国移动（`2409:8000::/20` 归移动，`2408:8000::/20` 才是联通）。
+- **前缀会变**：实测 2026-10-29 通告 `2409:8a28:4e5:2ef0::/64`，次日已变为 `…:3d00::/64`（/64 整段换掉，不是子网重编）。因此任何配置都不要写死 GUA，匹配键一律用 IPv4 地址或链路本地地址。
 - DHCP 服务：关闭，由旁路由接管（旁路由 `dhcp-authoritative`，下发 `option 3/6 = 192.168.231.1`）。
-- IPv6：保持"无状态/SLAAC + 主路由通告 RA"，当前实际通告的是 2409:8a28:4e5:2ef0::/64。
+- IPv6：保持"无状态/SLAAC + 主路由通告 RA"，当前实际通告的是 2409:8a28:4e5:3d00::/64。
 - 需要做的只有一件事：确认 IPv6 RA 只由它发（旁路由侧关掉 RA，见第五节）。
 
 ## 三、旁路由 onecloud（192.168.231.11）
@@ -77,7 +80,7 @@ flowchart TB
 | 登录 | `ssh root@192.168.231.11`（`~/.ssh/config` 中别名 `tailscale`，key `~/.ssh/ed25519`） |
 | eth0 IPv4 | 192.168.231.11/24 |
 | eth0 MAC | f6:4b:57:a2:ed:1c（`/etc/netplan/20-eth-fixed-mac.yaml` 固定，因此 fe80 地址稳定） |
-| eth0 IPv6 | GUA 2409:8a28:4e5:2ef0:f44b:57ff:fea2:ed1c/64（SLAAC，由 networkd 用户态收 RA，路由 `proto ra metric 1024`）；静态 ULA fd00:231::1/64；LLA fe80::f44b:57ff:fea2:ed1c |
+| eth0 IPv6 | GUA 2409:8a28:4e5:3d00:f44b:57ff:fea2:ed1c/64（SLAAC，由 networkd 用户态收 RA，路由 `proto ra metric 1024`）；静态 ULA fd00:231::1/64；LLA fe80::f44b:57ff:fea2:ed1c |
 | IPv6 学习 | `/etc/netplan/armbian.yaml`：`dhcp6: false`（不用 DHCPv6-PD），`eth0.accept_ra=0`（交给 systemd-networkd） |
 | 转发 | `net.ipv4.ip_forward=1`，`net.ipv6.conf.all.forwarding=1`（`/etc/sysctl.d/99-tailscale.conf`） |
 | 防火墙 | 只有 Tailscale 生成的持久化 ip(6)tables：`nat ts-postrouting` mark `0x40000/0xff0000` MASQUERADE、`filter ts-forward/ts-input`、`mangle` CONNMARK 恢复；FORWARD 策略 ACCEPT；无 nftables 规则集、无 sing-box redirect/tproxy 规则 |
