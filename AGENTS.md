@@ -96,7 +96,7 @@ flowchart TB
 设置要点（目标态）
 
 1. IPv6 不由旁路由通告（已完成：RA 三行注释，2026-10-31），RA 与 RDNSS 全部交给主路由；脚本存档 `ipv6-fix/onecloud-dnsmasq-ra.sh`。
-2. 只由 dnsmasq + sing-box 两个软件承担分流：dnsmasq 负责"哪些设备走旁路由"，sing-box 负责转发；IPv6 保持直连不进隧道（RA 无法按设备区分）。
+2. 只由 dnsmasq + sing-box 两个软件承担分流：dnsmasq 负责"哪些设备走旁路由"，sing-box 负责转发；IPv6 保持直连不进隧道（RA 无法按设备区分）。入站形态定为 **TUN 先行**（`tun-in` auto_route，免 iptables、支持 UDP），redirect `lan-redir:7892` 留作回退；tun-in 只配了 IPv4 地址，与"IPv6 直连"天然一致。
 3. LAN→尾网段由 sing-box 的 tailscale endpoint 承担（`onecloud.json` 里 `100.64.0.0/10 + fd7a::/48 → tailnet`，NAT 层搞定回程，无需 SNAT）；tailscaled 子网路由+SNAT 是被替代的旧方案。
 
 ## 四、旁路由已安装软件
@@ -120,6 +120,6 @@ flowchart TB
 ## 六、待确认
 
 1. 代理设备清单：哪些 MAC 需要打上 `set:proxy_devices`（用户决定：透明代理建立前保持空集）。
-2. `onecloud.json` 部署：已按用户决定以 `tailscale.json` 为基础演进（保留 tailscale endpoint，加 redirect 入站 `lan-redir:7892`，`100.64.0.0/10 + fd7a::/48 → tailnet`），1.14.4 check 通过；**尚未写入 `/etc/sing-box/config.json`、未启动服务**。部署前需轮换 SS PSK 并 `chmod 600`。
+2. `onecloud.json` 部署：已按用户决定以 `tailscale.json` 为基础演进（tailscale endpoint 保留；入站 `tun-in` auto_route + `lan-redir:7892` 并存，TUN 先行、redirect 回退；`100.64.0.0/10 + fd7a::/48 → tailnet`），1.14.4 check 通过；**尚未写入 `/etc/sing-box/config.json`、未启动服务**。部署前需轮换 SS PSK 并 `chmod 600`；部署时先实测 tailscale0 与 tun-in 双 TUN 并存，异常即退 redirect 形态。
 3. LAN→尾网段：由 `onecloud.json` 的 tailnet endpoint 承担（sing-box NAT 层），不再需要 tailscaled 子网路由 + SNAT；tailscaled 是否退居管理面待部署后定。
 4. `.117` 已认定为 AP，静态绑定 `dhcp-host=68-77-24-8D-2D-BB,192.168.231.2` 已生效；AP 侧自身管理地址是否要从 `.117` 改到 `.2` 待观察（AC+AP 通常在主路由面板配置）。
