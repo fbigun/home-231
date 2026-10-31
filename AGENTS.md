@@ -22,7 +22,7 @@ flowchart TB
     DEV ==>|"默认网关 / DNS"| MAIN
     ONE --- TS
     ONE -.->|"计划：代理设备改指 .11"| DEV
-    ONE -.->|"待关闭：RA 通告 fd00:231::/64"| DEV
+    ONE -.->|"已关闭：曾通告 fd00:231::/64"| DEV
 ```
 
 ### 链路关系
@@ -35,7 +35,7 @@ flowchart TB
 | 终端 → 主路由 | IPv4/IPv6 默认出口 | 网关与 DNS 均为 `192.168.231.1`；IPv6 下一跳 `fe80::828f…` |
 | 终端 → 旁路由（计划） | 仅代理设备 | dnsmasq 按 `tag:proxy_devices` 改发 `option 3/6 = 192.168.231.11` |
 | 旁路由 ↔ Tailscale | 子网路由 | 已宣告 `192.168.231.0/24` |
-| 旁路由 → 终端（待关闭） | 多余 RA | 通告 `fd00:231::/64` 与第二条默认路由，即第五节故障 |
+| 旁路由 → 终端 | 多余 RA（已关闭） | 曾通告 `fd00:231::/64` 与第二条默认路由（第五节故障）；2026-10-31 注释 dnsmasq RA 三行后停发，90s 抓包确认 |
 
 ### 终端在册（旁路由 DHCP 租约，实测）
 
@@ -46,7 +46,7 @@ flowchart TB
 | OPPO-Reno3-Pro-5G | 192.168.231.120 | 6E-5A-59-9C-CD-11 | 随机 MAC |
 | midea_ac_1363 | 192.168.231.178 | BC-89-F8-C1-E4-AE | 美的空调 |
 | Bouffalolab_BL602-5262ad | 192.168.231.112 | 7C-B9-4C-52-62-AD | IoT |
-| 无名 | 192.168.231.117 | 68-77-24-8D-2D-BB | 待确认，曾触发单播 RA |
+| 无名 | 192.168.231.117 | 68-77-24-8D-2D-BB | 认定为 AP；已静态绑定 `192.168.231.2` |
 | oec | 192.168.231.99 | DA-43-B1-F8-F7-78 | 静态租约 |
 | woniu | 192.168.231.100 | 00-E2-69-13-C0-64 | 静态租约；本次无租约（关机），knockd WoL 目标 |
 
@@ -70,7 +70,7 @@ flowchart TB
 - **前缀会变**：实测 2026-10-29 通告 `2409:8a28:4e5:2ef0::/64`，次日已变为 `…:3d00::/64`（/64 整段换掉，不是子网重编）。因此任何配置都不要写死 GUA，匹配键一律用 IPv4 地址或链路本地地址。
 - DHCP 服务：关闭，由旁路由接管（旁路由 `dhcp-authoritative`，下发 `option 3/6 = 192.168.231.1`）。
 - IPv6：保持"无状态/SLAAC + 主路由通告 RA"，当前实际通告的是 2409:8a28:4e5:3d00::/64。
-- 需要做的只有一件事：确认 IPv6 RA 只由它发（旁路由侧关掉 RA，见第五节）。
+- IPv6 RA 唯一来源就是它：旁路由侧 RA 已于 2026-10-31 关闭，全网段只有主路由通告。
 
 ## 三、旁路由 onecloud（192.168.231.11）
 
@@ -86,24 +86,24 @@ flowchart TB
 | 防火墙 | 只有 Tailscale 生成的持久化 ip(6)tables：`nat ts-postrouting` mark `0x40000/0xff0000` MASQUERADE、`filter ts-forward/ts-input`、`mangle` CONNMARK 恢复；FORWARD 策略 ACCEPT；无 nftables 规则集、无 sing-box redirect/tproxy 规则 |
 | tailscale | v1.104.2，active/enabled，`onecloud.hale-city.ts.net`，AllowedIPs 含 `192.168.231.0/24`（子网路由已宣告），节点密钥到期 2027-04-26 |
 | DHCP 池 | 192.168.231.101–200/255.255.255.0/12h，`dhcp-authoritative`，`domain=lan`、`expand-hosts`、`dhcp-fqdn` |
-| 静态租约 | woniu 192.168.231.100（00:E2:69:13:C0:64）；oec 192.168.231.99（DA:43:B1:F8:F7:78） |
+| 静态租约 | woniu 192.168.231.100（00:E2:69:13:C0:64）；oec 192.168.231.99（DA:43:B1:F8:F7:78）；AP 192.168.231.2（68-77-24-8D-2D-BB，2026-10-31 新增） |
 | DNS | :53，上游 223.5.5.5、119.29.29.29、2409:8028:2000::1111、2409:8028:2000::2222、100.100.100.100（尾网段，走 Tailscale）；`listen-address=192.168.231.11,127.0.0.1,100.93.202.116` |
 | 下发给普通客户端 | `option 3 = 192.168.231.1`、`option 6 = 192.168.231.1`、`option 138 = 192.168.231.1`、`option 60 = TP-LINK`（即默认全部直连主路由） |
 | 代理设备标记 | `tag:proxy_devices` → `option:router/dns-server = 192.168.231.11`；当前唯一绑定该 tag 的 `dhcp-host` 行是注释状态，集合为空 |
-| IPv6 RA | 当前开启：`enable-ra`、`dhcp-range=::,constructor:eth0,ra-only,slaac,64,1d`、`dhcp-option=eth0,option6:dns-server,fd00:231::1` |
+| IPv6 RA | 已关闭（2026-10-31）：`enable-ra`、`dhcp-range=::,constructor:eth0,ra-only,slaac,64,1d`、`dhcp-option=eth0,option6:dns-server,fd00:231::1` 三行已注释；备份在 `/etc/dnsmasq.conf.d-ra-backup/` |
 | 其他服务 | sshd active；cron、rsyslog、netfilter-persistent、unattended-upgrades、wpa_supplicant、systemd-resolved/timesyncd、armbian-* 一组 enabled；knockd active（端口序列 51002,58004,54781 → `wakeonlan 00:E2:69:13:C0:64`）；NetworkManager 未安装 |
 
 设置要点（目标态）
 
-1. IPv6 不由旁路由通告，RA 与 RDNSS 全部交给主路由；关掉上面那 3 行 dnsmasq 配置即可（`ipv6-fix/onecloud-dnsmasq-ra.sh`）。
+1. IPv6 不由旁路由通告（已完成：RA 三行注释，2026-10-31），RA 与 RDNSS 全部交给主路由；脚本存档 `ipv6-fix/onecloud-dnsmasq-ra.sh`。
 2. 只由 dnsmasq + sing-box 两个软件承担分流：dnsmasq 负责"哪些设备走旁路由"，sing-box 负责转发；IPv6 保持直连不进隧道（RA 无法按设备区分）。
-3. LAN 内无 tailscale 客户端访问尾网段，需要 `ip_forward` + SNAT（现有 `ts-postrouting` 只对旁路由自身发起的流量生效，转发流量还需 `192.168.231.0/24 → tailscale0` 的 MASQUERADE）+ 管理面板开启 subnet routing。
+3. LAN→尾网段由 sing-box 的 tailscale endpoint 承担（`onecloud.json` 里 `100.64.0.0/10 + fd7a::/48 → tailnet`，NAT 层搞定回程，无需 SNAT）；tailscaled 子网路由+SNAT 是被替代的旧方案。
 
 ## 四、旁路由已安装软件
 
 | 软件 | 版本 | 安装方式 | 状态 | 位置 / 备注 |
 |---|---|---|---|---|
-| dnsmasq | 2.91-1+deb13u2 | apt | active / enabled | `/etc/dnsmasq.conf`，DHCP + DNS + 当前那份 RA |
+| dnsmasq | 2.91-1+deb13u2 | apt | active / enabled | `/etc/dnsmasq.conf`，DHCP + DNS；RA 三行已于 2026-10-31 注释关闭，新增 `dhcp-host=68-77-24-8D-2D-BB,192.168.231.2`（AP 静态绑定） |
 | tailscale / tailscaled | 1.104.2（含 tailscale-archive-keyring 1.35.181） | apt（官方源） | active / enabled | `tailscale0` 100.93.202.116、fd7a:115c:a1e0::a536:ca74；`/etc/default/tailscaled` PORT=41641；MagicDNS 写 resolvconf 失败（interface-name 不匹配），以 `server=100.100.100.100` 补偿 |
 | sing-box | 1.14.4（armhf deb，dpkg 状态 `hi` 已 hold；2026-10-31 由 1.12.23 升级） | apt/deb | inactive / disabled，从未运行 | `/usr/bin/sing-box`；unit `/usr/lib/systemd/system/sing-box.service`（User=sing-box，CAP_NET_ADMIN/RAW/NET_BIND_SERVICE/SYS_PTRACE，`-D /var/lib/sing-box -C /etc/sing-box`）；`/var/lib/sing-box` 尚不存在；`/etc/sing-box/config.json`（644，内含明文 shadowsocks PSK，启用前先 `chmod 600` 并轮换密钥）现有配置为 SS 服务端示例，`sing-box check` 在 1.14.4 下通过（exit 0）；升级方式：sagernet 源在板上拉不动（后端 403），本机下载 armhf deb、MD5 对过 apt 元数据后 scp + `dpkg -i` |
 | systemd-networkd + netplan | 随 Armbian | — | active / enabled | `/etc/netplan/armbian.yaml`、`/etc/netplan/20-eth-fixed-mac.yaml` |
@@ -113,14 +113,13 @@ flowchart TB
 | wireguard-tools | 1.0.20210914-3 | apt | — | tailscale 依赖 |
 | tcpdump | 4.99.5 | apt | — | 诊断用 |
 
-## 五、当前唯一确认的故障
+## 五、已修复的故障（2026-10-31）
 
-旁路由用 `constructor:eth0` 生成 RA，把 netplan 里写死的 `fd00:231::/64` 连同第二条默认路由通告给全网段；Windows 客户端对相当一部分公网目标把源地址选成 `fd00:231::…`，ULA 在公网不可路由，TCP 100% 丢包。修法与验证见 `ipv6-fix/CHANGES.md`（改动 A），执行需确认。
+旁路由曾用 `constructor:eth0` 生成 RA，把 netplan 里写死的 `fd00:231::/64` 连同第二条默认路由通告给全网段；Windows 客户端对相当一部分公网目标把源地址选成 `fd00:231::…`，ULA 在公网不可路由，TCP 100% 丢包。当日注释 dnsmasq RA 三行 + 客户端 Wi-Fi 重连后，`verify-ipv6.ps1` 复测 `RESULT badSource=0 badTcp=0`（`::/0` 仅剩主路由一条，7 目标全 GUA 源 + TCP OK）。论证与脚本存档见 `ipv6-fix/CHANGES.md`。
 
 ## 六、待确认
 
-1. 代理设备清单：哪些 MAC 需要打上 `set:proxy_devices`。
-2. sing-box 隧道形态与 SS inbound 8080 是否保留。
-3. LAN→尾网段是否必须打通（需要 SNAT）。
-4. 改动 A 的执行时间。
-5. `68:77:24:8D:2D:BB`（192.168.231.117，无主机名）是什么设备——它曾触发单播 RA。
+1. 代理设备清单：哪些 MAC 需要打上 `set:proxy_devices`（用户决定：透明代理建立前保持空集）。
+2. `onecloud.json` 部署：已按用户决定以 `tailscale.json` 为基础演进（保留 tailscale endpoint，加 redirect 入站 `lan-redir:7892`，`100.64.0.0/10 + fd7a::/48 → tailnet`），1.14.4 check 通过；**尚未写入 `/etc/sing-box/config.json`、未启动服务**。部署前需轮换 SS PSK 并 `chmod 600`。
+3. LAN→尾网段：由 `onecloud.json` 的 tailnet endpoint 承担（sing-box NAT 层），不再需要 tailscaled 子网路由 + SNAT；tailscaled 是否退居管理面待部署后定。
+4. `.117` 已认定为 AP，静态绑定 `dhcp-host=68-77-24-8D-2D-BB,192.168.231.2` 已生效；AP 侧自身管理地址是否要从 `.117` 改到 `.2` 待观察（AC+AP 通常在主路由面板配置）。
