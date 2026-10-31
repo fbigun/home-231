@@ -46,7 +46,7 @@ flowchart TB
 | OPPO-Reno3-Pro-5G | 192.168.231.120 | 6E-5A-59-9C-CD-11 | 随机 MAC |
 | midea_ac_1363 | 192.168.231.178 | BC-89-F8-C1-E4-AE | 美的空调 |
 | Bouffalolab_BL602-5262ad | 192.168.231.112 | 7C-B9-4C-52-62-AD | IoT |
-| 无名 | 192.168.231.117 | 68-77-24-8D-2D-BB | 认定为 AP；已静态绑定 `192.168.231.2` |
+| 无名 | 192.168.231.117 | 68:77:24:8d:2d:bb | 认定为 AP；已静态绑定 `192.168.231.2`；chaddr 为 68:77:24:8d:2d:bb，稳定 MAC 68-77-24-8D-2D-BB（client-id 与 EUI-64 LLA 可见） |
 | oec | 192.168.231.99 | DA-43-B1-F8-F7-78 | 静态租约 |
 | woniu | 192.168.231.100 | 00-E2-69-13-C0-64 | 静态租约；本次无租约（关机），knockd WoL 目标 |
 
@@ -84,9 +84,9 @@ flowchart TB
 | IPv6 学习 | `/etc/netplan/armbian.yaml`：`dhcp6: false`（不用 DHCPv6-PD），`eth0.accept_ra=0`（交给 systemd-networkd） |
 | 转发 | `net.ipv4.ip_forward=1`，`net.ipv6.conf.all.forwarding=1`（`/etc/sysctl.d/99-forwarding.conf`，2026-10-31 由 99-tailscale.conf 改名，sysctl 已重载） |
 | 防火墙 | 空规则集（2026-10-31）：ts-\* 规则与 netfilter-persistent 已随 tailscale 清理一并移除，无持久化 ip(6)tables、无 nftables 规则集；FORWARD 策略 ACCEPT |
-| sing-box tailscale endpoint | active/enabled；新节点 NodeID `nAfhqG1tt221CNTRL`（auth key 注册，2026-10-31，旧节点 .116 已随 tailscaled 移除）；`advertise_routes=["192.168.231.0/24"]`、`accept_routes=true` 已批准；tun-in 栈 **gvisor**（mixed/system 栈在本机吞掉本机出站 TCP，已实测确认并绕开）；state 在 `/var/lib/sing-box/ts` |
+| sing-box tailscale endpoint | active/enabled；新节点 NodeID `nAfhqG1tt221CNTRL`（auth key 注册，2026-10-31，旧节点 .116 已随 tailscaled 移除）；`advertise_routes=["192.168.231.0/24"]`、`accept_routes=true` 已批准；tun-in 栈 **gvisor**（mixed/system 栈在本机吞掉本机出站 TCP，已实测确认并绕开；实际内核接口名为 `tun0`，`tun-in` 是配置里的 tag，仅 IPv4 地址 172.19.0.1/30）；state 在 `/var/lib/sing-box/ts` |
 | DHCP 池 | 192.168.231.101–200/255.255.255.0/12h，`dhcp-authoritative`，`domain=lan`、`expand-hosts`、`dhcp-fqdn` |
-| 静态租约 | woniu 192.168.231.100（00:E2:69:13:C0:64）；oec 192.168.231.99（DA:43:B1:F8:F7:78）；AP 192.168.231.2（68-77-24-8D-2D-BB，2026-10-31 新增） |
+| 静态租约 | woniu 192.168.231.100（00:E2:69:13:C0:64）；oec 192.168.231.99（DA:43:B1:F8:F7:78）；AP 192.168.231.2（68:77:24:8d:2d:bb，按 DHCP chaddr 匹配，2026-10-31 新增，`.2` 已实测在线） |
 | DNS | :53，上游 223.5.5.5、119.29.29.29、2409:8028:2000::1111、2409:8028:2000::2222；`listen-address=192.168.231.11,127.0.0.1`；`/etc/resolv.conf` → `nameserver 127.0.0.1`；尾网段域名经 sing-box `taildns` 解析（dnsmasq 转发 → tun-in → hijack-dns，实测 `sukean` → 100.123.38.36） |
 | 下发给普通客户端 | `option 3 = 192.168.231.1`、`option 6 = 192.168.231.1`、`option 138 = 192.168.231.1`、`option 60 = TP-LINK`（即默认全部直连主路由） |
 | 代理设备标记 | `tag:proxy_devices` → `option:router/dns-server = 192.168.231.11`；当前唯一绑定该 tag 的 `dhcp-host` 行是注释状态，集合为空 |
@@ -103,7 +103,7 @@ flowchart TB
 
 | 软件 | 版本 | 安装方式 | 状态 | 位置 / 备注 |
 |---|---|---|---|---|
-| dnsmasq | 2.91-1+deb13u2 | apt | active / enabled | `/etc/dnsmasq.conf`，DHCP + DNS；RA 三行已于 2026-10-31 注释关闭，新增 `dhcp-host=68-77-24-8D-2D-BB,192.168.231.2`（AP 静态绑定） |
+| dnsmasq | 2.91-1+deb13u2 | apt | active / enabled | `/etc/dnsmasq.conf`，DHCP + DNS；RA 三行已于 2026-10-31 注释关闭，新增 `dhcp-host=68:77:24:8d:2d:bb,192.168.231.2`（AP 静态绑定） |
 | tailscale / tailscaled | 1.104.2（含 tailscale-archive-keyring 1.35.181） | apt（官方源） | **已 purge（2026-10-31）**，职责由 sing-box tailscale endpoint 接管 | 旧节点 `onecloud.hale-city.ts.net`（100.93.202.116）随 purge 失效；新节点见第三节 endpoint 行 |
 | sing-box | 1.14.4（armhf deb，dpkg 状态 `hi` 已 hold） | apt/deb | **active / enabled**（2026-10-31 启用） | unit `/usr/lib/systemd/system/sing-box.service`（User=sing-box，CAP_NET_ADMIN/RAW/NET_BIND_SERVICE/SYS_PTRACE，`-D /var/lib/sing-box -C /etc/sing-box`）；`/etc/sing-box/config.json`（600 root；auth key 已写入并消费，勿提交 git）；tailscale endpoint（state `/var/lib/sing-box/ts`）+ tun-in（gvisor）+ lan-redir:7892 并存；启动引导依赖直连 UDP 解析器 `boot=223.5.5.5`（`local` 链在旧 MagicDNS 残留时死锁）；升级方式：sagernet 源在板上拉不动（后端 403），本机下载 armhf deb、MD5 对过 apt 元数据后 scp + `dpkg -i` |
 | systemd-networkd + netplan | 随 Armbian | — | active / enabled | `/etc/netplan/armbian.yaml`、`/etc/netplan/20-eth-fixed-mac.yaml` |
@@ -123,5 +123,5 @@ flowchart TB
 1. 代理设备清单：哪些 MAC 需要打上 `set:proxy_devices`（用户决定：透明代理建立前保持空集）。
 2. `onecloud.json` 已部署（2026-10-31）：写入 `/etc/sing-box/config.json` 并 enable --now，服务 active；auth key 已消费，config.json 600 root **勿提交 git**。迁移期备份：板上 `/root/migration-backup-20261031/`。
 3. LAN→尾网段：已由 sing-box tailnet endpoint 承担并实测通；tailscaled 已 purge，`/var/lib/tailscale` 已删，子网路由审批已迁移到新节点并批准。
-4. `.117` 已认定为 AP，静态绑定 `dhcp-host=68-77-24-8D-2D-BB,192.168.231.2` 已生效；AP 侧自身管理地址是否要从 `.117` 改到 `.2` 待观察（AC+AP 通常在主路由面板配置）。
+4. `.117` 已认定为 AP，静态绑定 `dhcp-host=68:77:24:8d:2d:bb,192.168.231.2` 已生效（按 DHCP chaddr 匹配，`.2` 实测在线）；AP 侧自身管理地址是否要从 `.117` 改到 `.2` 待观察（AC+AP 通常在主路由面板配置）。
 5. 旧节点 `.116`（onecloud）在管理台仍占一个设备名额，可手动删除；删除不影响新节点。
