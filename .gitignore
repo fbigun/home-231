@@ -1,4 +1,5 @@
 *
 !*.json
 !AGENTS.md
+!README.md
 !.gitignore
