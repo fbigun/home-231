@@ -2,8 +2,9 @@
   "log": { "level": "info" },
   "dns": {
     "servers": [
-      { "type": "https", "tag": "doh", "server": "doh.pub", "domain_resolver": "local" },
+      { "type": "https", "tag": "doh", "server": "doh.pub", "domain_resolver": "boot" },
       { "type": "local", "tag": "local" },
+      { "type": "udp", "tag": "boot", "server": "223.5.5.5" },
       {
         "type": "tailscale",
         "tag": "taildns",
@@ -23,8 +24,10 @@
       "type": "tailscale",
       "tag": "tailnet",
       "auth_key": "",
+      "state_directory": "/var/lib/sing-box/ts",
+      "advertise_routes": ["192.168.231.0/24"],
       "accept_routes": true,
-      "domain_resolver": "doh"
+      "domain_resolver": "boot"
     }
   ],
   "inbounds": [
@@ -55,6 +58,6 @@
     ],
     "final": "direct",
     "auto_detect_interface": true,
-    "default_domain_resolver": "doh"
+    "default_domain_resolver": "boot"
   }
 }

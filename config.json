@@ -1,0 +1,990 @@
+{
+  "log": {
+    "level": "info"
+  },
+  "dns": {
+    "servers": [
+      {
+        "type": "https",
+        "tag": "dnspod",
+        "domain_resolver": "local",
+        "server": "doh.pub"
+      },
+      {
+        "type": "local",
+        "tag": "local"
+      },
+      {
+        "type": "fakeip",
+        "tag": "fakeip",
+        "inet4_range": "198.18.0.0/15"
+      }
+    ],
+    "rules": [
+      {
+        "clash_mode": "Direct",
+        "server": "local"
+      },
+      {
+        "clash_mode": "Global",
+        "server": "fakeip",
+        "strategy": "ipv4_only"
+      },
+      {
+        "rule_set": "geosite-category-ads",
+        "action": "reject"
+      },
+      {
+        "rule_set": "geosite-geolocation-!cn",
+        "server": "fakeip",
+        "strategy": "ipv4_only"
+      }
+    ],
+    "independent_cache": true
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "tag": "tun-in",
+      "address": [
+        "172.19.0.1/30",
+        "fdfe:dcba:9876::1/126"
+      ],
+      "auto_route": true,
+      "strict_route": true,
+      "stack": "mixed"
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "🎯 全球直连"
+    },
+    {
+      "type": "urltest",
+      "tag": "🔯 香港节点",
+      "outbounds": [
+        "🇭🇰 [IPLC-移动优化 -香港1] ✨ 2x",
+        "🇭🇰 [IPLC-移动优化 -香港2] ✨ 2x",
+        "🇭🇰 [IPLC-移动优化-家宽 -香港] ✨ 2x",
+        "🇭🇰 [直连 -香港2] ✨ 1x"
+      ]
+    },
+    {
+      "type": "urltest",
+      "tag": "♻️ 自动选择",
+      "outbounds": [
+        "美国节点1",
+        "美国节点2",
+        "美国节点3",
+        "美国节点4",
+        "🕖到期时间: 2052-11-21",
+        "⏳剩余流量: 110.1GB",
+        "[69云] ✨ 国内:::china.69yun69.com",
+        "[69云]✨永久:::69yun69.com",
+        "[69云基础服3]✨https://emby1.69yun69.com:443",
+        "🇭🇰 [IPLC-移动优化 -香港1] ✨ 2x",
+        "🇭🇰 [IPLC-移动优化 -香港2] ✨ 2x",
+        "🇹🇼 [IPLC-移动优化 -台湾地区1] ✨ 2x",
+        "🇹🇼 [IPLC-移动优化-家宽 -台湾1] ✨ 2x",
+        "🇭🇰 [IPLC-移动优化-家宽 -香港] ✨ 2x",
+        "🇺🇲 [IPLC-移动优化 -美国1] ✨ 2x",
+        "🇺🇲 [IPLC-移动优化-美国 -盐湖城] ✨ 2x",
+        "[IPLC-移动优化 -葡萄牙] ✨ 2x",
+        "[IPLC-移动优化 -墨西哥] ✨ 2x",
+        "[IPLC-移动优化 -尼日利亚]  ✨ 5x",
+        "🇧🇷 [IPLC-移动优化 -巴西] ✨ 2x",
+        "🇩🇪 [IPLC-移动优化 -德国-主] ✨ 2x",
+        "🇸🇬 [IPLC-移动优化 -新加坡] ✨ 2x",
+        "🇯🇵 [IPLC-移动优化 -日本] ✨ 2x",
+        "🇫🇷 [IPLC-移动优化 -法国] ✨ 2x",
+        "🇦🇺 [IPLC-移动优化 -澳大利亚] ✨ 2x",
+        "🇬🇧 [IPLC-移动优化 -英国] ✨ 2x",
+        "🇰🇷 [IPLC-移动优化 -韩国] ✨ 2x\t",
+        "🇨🇦 [IPLC-移动优化-加拿大 -蒙特利尔] ✨ 2x",
+        "🇳🇱 [IPLC-移动优化-荷兰 -阿姆斯特丹] ✨ 2x",
+        "🇭🇰 [直连 -香港2] ✨ 1x",
+        "🇮🇳 [IPLC-移动优化 -印度] ✨ 5x",
+        "[IPLC-移动优化 -埃及] ✨ 5x",
+        "🇻🇳 [IPLC-移动优化 -越南] ✨ 5x",
+        "🇲🇾 [IPLC-移动优化-动态IP -马来西亚2] ✨ 5x",
+        "[IPLC-移动优化 -波兰] ✨ 5x",
+        "🇲🇴 [IPLC-移动优化 -澳门] ✨5x",
+        "🇷🇺 [IPLC-移动优化 -莫斯科] ✨ 5x",
+        "🇵🇭 [IPLC-移动优化 -菲律宾] ✨ 5x",
+        "🇮🇳 [国际入口 -印度]✨ 5x",
+        "CF官方优选",
+        "CF官方优选 2",
+        "CF官方优选 3",
+        "CF官方优选 4",
+        "CF官方优选 5",
+        "CF官方优选 6",
+        "CF官方优选 7",
+        "CF官方优选 8",
+        "CF官方优选 9",
+        "CF官方优选 10",
+        "CF官方优选 11",
+        "CF官方优选 12",
+        "CF官方优选 13",
+        "CF官方优选 14",
+        "CF官方优选 15",
+        "CF官方优选 16"
+      ]
+    },
+    {
+      "type": "selector",
+      "tag": "🐸 手动切换",
+      "outbounds": [
+        "美国节点1",
+        "美国节点2",
+        "美国节点3",
+        "美国节点4",
+        "🕖到期时间: 2052-11-21",
+        "⏳剩余流量: 110.1GB",
+        "[69云] ✨ 国内:::china.69yun69.com",
+        "[69云]✨永久:::69yun69.com",
+        "[69云基础服3]✨https://emby1.69yun69.com:443",
+        "🇭🇰 [IPLC-移动优化 -香港1] ✨ 2x",
+        "🇭🇰 [IPLC-移动优化 -香港2] ✨ 2x",
+        "🇹🇼 [IPLC-移动优化 -台湾地区1] ✨ 2x",
+        "🇹🇼 [IPLC-移动优化-家宽 -台湾1] ✨ 2x",
+        "🇭🇰 [IPLC-移动优化-家宽 -香港] ✨ 2x",
+        "🇺🇲 [IPLC-移动优化 -美国1] ✨ 2x",
+        "🇺🇲 [IPLC-移动优化-美国 -盐湖城] ✨ 2x",
+        "[IPLC-移动优化 -葡萄牙] ✨ 2x",
+        "[IPLC-移动优化 -墨西哥] ✨ 2x",
+        "[IPLC-移动优化 -尼日利亚]  ✨ 5x",
+        "🇧🇷 [IPLC-移动优化 -巴西] ✨ 2x",
+        "🇩🇪 [IPLC-移动优化 -德国-主] ✨ 2x",
+        "🇸🇬 [IPLC-移动优化 -新加坡] ✨ 2x",
+        "🇯🇵 [IPLC-移动优化 -日本] ✨ 2x",
+        "🇫🇷 [IPLC-移动优化 -法国] ✨ 2x",
+        "🇦🇺 [IPLC-移动优化 -澳大利亚] ✨ 2x",
+        "🇬🇧 [IPLC-移动优化 -英国] ✨ 2x",
+        "🇰🇷 [IPLC-移动优化 -韩国] ✨ 2x\t",
+        "🇨🇦 [IPLC-移动优化-加拿大 -蒙特利尔] ✨ 2x",
+        "🇳🇱 [IPLC-移动优化-荷兰 -阿姆斯特丹] ✨ 2x",
+        "🇭🇰 [直连 -香港2] ✨ 1x",
+        "🇮🇳 [IPLC-移动优化 -印度] ✨ 5x",
+        "[IPLC-移动优化 -埃及] ✨ 5x",
+        "🇻🇳 [IPLC-移动优化 -越南] ✨ 5x",
+        "🇲🇾 [IPLC-移动优化-动态IP -马来西亚2] ✨ 5x",
+        "[IPLC-移动优化 -波兰] ✨ 5x",
+        "🇲🇴 [IPLC-移动优化 -澳门] ✨5x",
+        "🇷🇺 [IPLC-移动优化 -莫斯科] ✨ 5x",
+        "🇵🇭 [IPLC-移动优化 -菲律宾] ✨ 5x",
+        "🇮🇳 [国际入口 -印度]✨ 5x",
+        "CF官方优选",
+        "CF官方优选 2",
+        "CF官方优选 3",
+        "CF官方优选 4",
+        "CF官方优选 5",
+        "CF官方优选 6",
+        "CF官方优选 7",
+        "CF官方优选 8",
+        "CF官方优选 9",
+        "CF官方优选 10",
+        "CF官方优选 11",
+        "CF官方优选 12",
+        "CF官方优选 13",
+        "CF官方优选 14",
+        "CF官方优选 15",
+        "CF官方优选 16"
+      ]
+    },
+    {
+      "type": "selector",
+      "tag": "🚀 节点选择",
+      "outbounds": [
+        "🎯 全球直连",
+        "🔯 香港节点",
+        "♻️ 自动选择",
+        "🐸 手动切换"
+      ],
+      "default": "♻️ 自动选择"
+    },
+    {
+      "type": "selector",
+      "tag": "🐟 漏网之鱼",
+      "outbounds": [
+        "🎯 全球直连",
+        "🚀 节点选择"
+      ],
+      "default": "🎯 全球直连"
+    },
+    {
+      "tag": "美国节点1",
+      "type": "hysteria2",
+      "server": "107.173.148.98",
+      "server_port": 62535,
+      "password": "71570119-54e3-4bf7-9684-6500da45c19c",
+      "tls": {
+        "enabled": true,
+        "server_name": "107.173.148.98",
+        "insecure": true
+      }
+    },
+    {
+      "tag": "美国节点2",
+      "type": "shadowsocks",
+      "server": "107.173.148.98",
+      "server_port": 62121,
+      "method": "chacha20-ietf-poly1305",
+      "password": "jkuhkjgfgf"
+    },
+    {
+      "tag": "美国节点3",
+      "type": "vless",
+      "server": "107.173.148.98",
+      "server_port": 23292,
+      "uuid": "74a304fb-b2fd-476b-9f94-775b4821b6a4",
+      "tls": {
+        "enabled": true,
+        "server_name": "dash.cloudflare.com",
+        "insecure": false,
+        "reality": {
+          "enabled": true,
+          "public_key": "C6KceHPMafaIxcr_EeLzPOmTo19aqMkLNRenvrCGLkQ"
+        },
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "flow": "xtls-rprx-vision"
+    },
+    {
+      "tag": "美国节点4",
+      "type": "vmess",
+      "server": "107.173.148.98",
+      "server_port": 62313,
+      "uuid": "44f63d22-c41c-4a92-a665-53f7cf5b92db",
+      "security": "auto",
+      "alter_id": 0,
+      "transport": {
+        "type": "http",
+        "headers": {},
+        "path": "/"
+      }
+    },
+    {
+      "tag": "🕖到期时间: 2052-11-21",
+      "type": "http",
+      "server": "69云",
+      "server_port": 80
+    },
+    {
+      "tag": "⏳剩余流量: 110.1GB",
+      "type": "http",
+      "server": "69云",
+      "server_port": 80
+    },
+    {
+      "tag": "[69云] ✨ 国内:::china.69yun69.com",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 52325,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "[69云]✨永久:::69yun69.com",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 42339,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "[69云基础服3]✨https://emby1.69yun69.com:443",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 52329,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇭🇰 [IPLC-移动优化 -香港1] ✨ 2x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 35361,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇭🇰 [IPLC-移动优化 -香港2] ✨ 2x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 35365,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇹🇼 [IPLC-移动优化 -台湾地区1] ✨ 2x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 37386,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇹🇼 [IPLC-移动优化-家宽 -台湾1] ✨ 2x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 30302,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇭🇰 [IPLC-移动优化-家宽 -香港] ✨ 2x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 20511,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇺🇲 [IPLC-移动优化 -美国1] ✨ 2x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 53362,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇺🇲 [IPLC-移动优化-美国 -盐湖城] ✨ 2x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 53365,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "[IPLC-移动优化 -葡萄牙] ✨ 2x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 51327,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "[IPLC-移动优化 -墨西哥] ✨ 2x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 30333,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "[IPLC-移动优化 -尼日利亚]  ✨ 5x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 30906,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇧🇷 [IPLC-移动优化 -巴西] ✨ 2x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 44335,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇩🇪 [IPLC-移动优化 -德国-主] ✨ 2x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 21311,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇸🇬 [IPLC-移动优化 -新加坡] ✨ 2x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 21381,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇯🇵 [IPLC-移动优化 -日本] ✨ 2x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 55327,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇫🇷 [IPLC-移动优化 -法国] ✨ 2x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 55371,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇦🇺 [IPLC-移动优化 -澳大利亚] ✨ 2x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 24323,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇬🇧 [IPLC-移动优化 -英国] ✨ 2x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 41391,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇰🇷 [IPLC-移动优化 -韩国] ✨ 2x\t",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 52323,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇨🇦 [IPLC-移动优化-加拿大 -蒙特利尔] ✨ 2x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 41393,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇳🇱 [IPLC-移动优化-荷兰 -阿姆斯特丹] ✨ 2x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 52355,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇭🇰 [直连 -香港2] ✨ 1x",
+      "type": "shadowsocks",
+      "server": "hk-nat-toys-ddns.337979.xyz",
+      "server_port": 20513,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇮🇳 [IPLC-移动优化 -印度] ✨ 5x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 14323,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "[IPLC-移动优化 -埃及] ✨ 5x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 31755,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇻🇳 [IPLC-移动优化 -越南] ✨ 5x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 24325,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇲🇾 [IPLC-移动优化-动态IP -马来西亚2] ✨ 5x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 57379,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "[IPLC-移动优化 -波兰] ✨ 5x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 53315,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇲🇴 [IPLC-移动优化 -澳门] ✨5x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 31352,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇷🇺 [IPLC-移动优化 -莫斯科] ✨ 5x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 20382,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇵🇭 [IPLC-移动优化 -菲律宾] ✨ 5x",
+      "type": "shadowsocks",
+      "server": "45.250.182.154",
+      "server_port": 20056,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "🇮🇳 [国际入口 -印度]✨ 5x",
+      "type": "shadowsocks",
+      "server": "163.61.31.190",
+      "server_port": 44363,
+      "method": "aes-256-gcm",
+      "password": "eL7i0aqdXzdpNNa6"
+    },
+    {
+      "tag": "CF官方优选",
+      "type": "vless",
+      "server": "172.64.147.22",
+      "server_port": 8443,
+      "uuid": "afeae6fa-b1d4-416f-85e4-3b2f923022d2",
+      "tls": {
+        "enabled": true,
+        "server_name": "kdlk.cmliu.180770.xyz",
+        "insecure": false,
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "kdlk.cmliu.180770.xyz"
+        },
+        "path": "/"
+      }
+    },
+    {
+      "tag": "CF官方优选 2",
+      "type": "vless",
+      "server": "104.26.10.0",
+      "server_port": 443,
+      "uuid": "afeae6fa-b1d4-416f-85e4-3b2f923022d2",
+      "tls": {
+        "enabled": true,
+        "server_name": "kdlk.cmliu.180770.xyz",
+        "insecure": false,
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "kdlk.cmliu.180770.xyz"
+        },
+        "path": "/"
+      }
+    },
+    {
+      "tag": "CF官方优选 3",
+      "type": "vless",
+      "server": "162.159.37.230",
+      "server_port": 2053,
+      "uuid": "afeae6fa-b1d4-416f-85e4-3b2f923022d2",
+      "tls": {
+        "enabled": true,
+        "server_name": "kdlk.cmliu.180770.xyz",
+        "insecure": false,
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "kdlk.cmliu.180770.xyz"
+        },
+        "path": "/"
+      }
+    },
+    {
+      "tag": "CF官方优选 4",
+      "type": "vless",
+      "server": "108.162.198.187",
+      "server_port": 2083,
+      "uuid": "afeae6fa-b1d4-416f-85e4-3b2f923022d2",
+      "tls": {
+        "enabled": true,
+        "server_name": "kdlk.cmliu.180770.xyz",
+        "insecure": false,
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "kdlk.cmliu.180770.xyz"
+        },
+        "path": "/"
+      }
+    },
+    {
+      "tag": "CF官方优选 5",
+      "type": "vless",
+      "server": "104.26.13.141",
+      "server_port": 2087,
+      "uuid": "afeae6fa-b1d4-416f-85e4-3b2f923022d2",
+      "tls": {
+        "enabled": true,
+        "server_name": "kdlk.cmliu.180770.xyz",
+        "insecure": false,
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "kdlk.cmliu.180770.xyz"
+        },
+        "path": "/"
+      }
+    },
+    {
+      "tag": "CF官方优选 6",
+      "type": "vless",
+      "server": "172.64.144.31",
+      "server_port": 2087,
+      "uuid": "afeae6fa-b1d4-416f-85e4-3b2f923022d2",
+      "tls": {
+        "enabled": true,
+        "server_name": "kdlk.cmliu.180770.xyz",
+        "insecure": false,
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "kdlk.cmliu.180770.xyz"
+        },
+        "path": "/"
+      }
+    },
+    {
+      "tag": "CF官方优选 7",
+      "type": "vless",
+      "server": "104.19.57.9",
+      "server_port": 2053,
+      "uuid": "afeae6fa-b1d4-416f-85e4-3b2f923022d2",
+      "tls": {
+        "enabled": true,
+        "server_name": "kdlk.cmliu.180770.xyz",
+        "insecure": false,
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "kdlk.cmliu.180770.xyz"
+        },
+        "path": "/"
+      }
+    },
+    {
+      "tag": "CF官方优选 8",
+      "type": "vless",
+      "server": "104.19.63.101",
+      "server_port": 8443,
+      "uuid": "afeae6fa-b1d4-416f-85e4-3b2f923022d2",
+      "tls": {
+        "enabled": true,
+        "server_name": "kdlk.cmliu.180770.xyz",
+        "insecure": false,
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "kdlk.cmliu.180770.xyz"
+        },
+        "path": "/"
+      }
+    },
+    {
+      "tag": "CF官方优选 9",
+      "type": "vless",
+      "server": "104.19.44.141",
+      "server_port": 2096,
+      "uuid": "afeae6fa-b1d4-416f-85e4-3b2f923022d2",
+      "tls": {
+        "enabled": true,
+        "server_name": "kdlk.cmliu.180770.xyz",
+        "insecure": false,
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "kdlk.cmliu.180770.xyz"
+        },
+        "path": "/"
+      }
+    },
+    {
+      "tag": "CF官方优选 10",
+      "type": "vless",
+      "server": "104.19.55.33",
+      "server_port": 8443,
+      "uuid": "afeae6fa-b1d4-416f-85e4-3b2f923022d2",
+      "tls": {
+        "enabled": true,
+        "server_name": "kdlk.cmliu.180770.xyz",
+        "insecure": false,
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "kdlk.cmliu.180770.xyz"
+        },
+        "path": "/"
+      }
+    },
+    {
+      "tag": "CF官方优选 11",
+      "type": "vless",
+      "server": "172.64.147.196",
+      "server_port": 2053,
+      "uuid": "afeae6fa-b1d4-416f-85e4-3b2f923022d2",
+      "tls": {
+        "enabled": true,
+        "server_name": "kdlk.cmliu.180770.xyz",
+        "insecure": false,
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "kdlk.cmliu.180770.xyz"
+        },
+        "path": "/"
+      }
+    },
+    {
+      "tag": "CF官方优选 12",
+      "type": "vless",
+      "server": "162.159.33.160",
+      "server_port": 2096,
+      "uuid": "afeae6fa-b1d4-416f-85e4-3b2f923022d2",
+      "tls": {
+        "enabled": true,
+        "server_name": "kdlk.cmliu.180770.xyz",
+        "insecure": false,
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "kdlk.cmliu.180770.xyz"
+        },
+        "path": "/"
+      }
+    },
+    {
+      "tag": "CF官方优选 13",
+      "type": "vless",
+      "server": "172.64.146.245",
+      "server_port": 8443,
+      "uuid": "afeae6fa-b1d4-416f-85e4-3b2f923022d2",
+      "tls": {
+        "enabled": true,
+        "server_name": "kdlk.cmliu.180770.xyz",
+        "insecure": false,
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "kdlk.cmliu.180770.xyz"
+        },
+        "path": "/"
+      }
+    },
+    {
+      "tag": "CF官方优选 14",
+      "type": "vless",
+      "server": "172.67.68.222",
+      "server_port": 2053,
+      "uuid": "afeae6fa-b1d4-416f-85e4-3b2f923022d2",
+      "tls": {
+        "enabled": true,
+        "server_name": "kdlk.cmliu.180770.xyz",
+        "insecure": false,
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "kdlk.cmliu.180770.xyz"
+        },
+        "path": "/"
+      }
+    },
+    {
+      "tag": "CF官方优选 15",
+      "type": "vless",
+      "server": "172.64.145.1",
+      "server_port": 2096,
+      "uuid": "afeae6fa-b1d4-416f-85e4-3b2f923022d2",
+      "tls": {
+        "enabled": true,
+        "server_name": "kdlk.cmliu.180770.xyz",
+        "insecure": false,
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "kdlk.cmliu.180770.xyz"
+        },
+        "path": "/"
+      }
+    },
+    {
+      "tag": "CF官方优选 16",
+      "type": "vless",
+      "server": "198.41.223.54",
+      "server_port": 443,
+      "uuid": "afeae6fa-b1d4-416f-85e4-3b2f923022d2",
+      "tls": {
+        "enabled": true,
+        "server_name": "kdlk.cmliu.180770.xyz",
+        "insecure": false,
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "kdlk.cmliu.180770.xyz"
+        },
+        "path": "/"
+      }
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "inbound": "tun-in",
+        "action": "sniff"
+      },
+      {
+        "protocol": "dns",
+        "action": "hijack-dns"
+      },
+      {
+        "protocol": "bittorrent",
+        "outbound": "🎯 全球直连"
+      },
+      {
+        "clash_mode": "Direct",
+        "outbound": "🎯 全球直连"
+      },
+      {
+        "clash_mode": "Global",
+        "outbound": "🚀 节点选择"
+      },
+      {
+        "rule_set": "geosite-category-ads",
+        "action": "reject"
+      },
+      {
+        "rule_set": "geosite-geolocation-!cn",
+        "outbound": "🚀 节点选择"
+      },
+      {
+        "rule_set": [
+          "geosite-geolocation-cn",
+          "geoip-cn"
+        ],
+        "outbound": "🎯 全球直连"
+      }
+    ],
+    "rule_set": [
+      {
+        "type": "remote",
+        "tag": "geosite-category-ads",
+        "url": "https://gcore.jsdelivr.net/gh/TG-Twilight/AWAvenue-Ads-Rule@main/Filters/AWAvenue-Ads-Rule-Singbox.json"
+      },
+      {
+        "type": "remote",
+        "tag": "geosite-geolocation-cn",
+        "url": "https://gcore.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-geolocation-cn.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "geosite-geolocation-!cn",
+        "url": "https://gcore.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-geolocation-!cn.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "geoip-cn",
+        "url": "https://gcore.jsdelivr.net/gh/SagerNet/sing-geoip@rule-set/geoip-cn.srs"
+      }
+    ],
+    "final": "🐟 漏网之鱼",
+    "auto_detect_interface": true,
+    "default_domain_resolver": "dnspod"
+  },
+  "experimental": {
+    "cache_file": {
+      "enabled": true,
+      "store_rdrc": true
+    },
+    "clash_api": {
+      "external_controller": "127.0.0.1:9090",
+      "external_ui": "ui",
+      "external_ui_download_url": "https://github.com/Zephyruso/zashboard/archive/gh-pages.zip"
+    }
+  }
+}
