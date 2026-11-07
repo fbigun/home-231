@@ -1,0 +1,19 @@
+"**":
+  push:
+    - &mirror
+      name: sync-to-github
+      imports:
+        - https://cnb.cool/fbigun/secrets/-/blob/main/github.yml
+      stages:
+        - name: mirror
+          image: alpine/git
+          script: |
+            set -eu
+            AUTH=$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 | tr -d '\n')
+            git clone --mirror "https://cnb:$CNB_TOKEN@cnb.cool/$CNB_REPO_SLUG_LOWERCASE.git" /tmp/mirror.git
+            git -C /tmp/mirror.git -c http.extraheader="AUTHORIZATION: basic $AUTH" \
+              push --mirror "https://github.com/fbigun/home-231.git"
+
+$:
+  tag_push:
+    - *mirror
