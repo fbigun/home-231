@@ -2,20 +2,16 @@
   "log": { "level": "info" },
   "dns": {
     "servers": [
-      { "type": "https", "tag": "doh", "server": "doh.pub", "domain_resolver": "local" },
-      { "type": "local", "tag": "local" },
-      {
-        "type": "tailscale",
-        "tag": "taildns",
-        "endpoint": "tailnet",
-        "accept_search_domain": true
-      }
+      { "type": "https", "tag": "alidns", "server": "dns.alidns.com", "domain_resolver": "hosts" },
+      { "type": "hosts", "tag": "hosts", "predefined": { "dns.alidns.com": ["223.5.5.5", "223.6.6.6"] } },
+      { "type": "tailscale", "tag": "taildns", "endpoint": "tailnet", "accept_search_domain": true }
     ],
     "rules": [
-      { "preferred_by": "taildns", "action": "route", "server": "taildns" },
-      { "domain_suffix": "tailscale.com", "server": "doh" }
+      { "preferred_by": "taildns", "action": "route", "server": "taildns" }
     ],
-    "final": "local",
+    "final": "alidns",
+    "cache_capacity": 8192,
+    "optimistic": true,
     "reverse_mapping": true
   },
   "endpoints": [
@@ -24,17 +20,16 @@
       "tag": "tailnet",
       "auth_key": "",
       "accept_routes": true,
-      "domain_resolver": "doh"
+      "domain_resolver": "alidns"
     }
   ],
   "inbounds": [
     {
       "type": "tun",
       "tag": "tun-in",
-      "address": ["172.19.0.1/30"],
+      "address": ["172.19.0.1/30", "fdfe:dcba:9876::1/126"],
       "auto_route": true,
-      "strict_route": false,
-      "stack": "mixed"
+      "strict_route": false
     }
   ],
   "outbounds": [{ "type": "direct", "tag": "direct" }],
@@ -42,13 +37,10 @@
     "rules": [
       { "inbound": "tun-in", "action": "sniff" },
       { "protocol": "dns", "action": "hijack-dns" },
-      {
-        "ip_cidr": ["192.168.231.0/24", "100.64.0.0/10"],
-        "outbound": "tailnet"
-      }
+      { "preferred_by": "tailnet", "outbound": "tailnet" }
     ],
     "final": "direct",
     "auto_detect_interface": true,
-    "default_domain_resolver": "doh"
+    "default_domain_resolver": "alidns"
   }
 }

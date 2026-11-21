@@ -124,7 +124,16 @@ flowchart TB
 
 卸载后的残留备份在 `/root/migration-backup-20261031/`，待完成清理。
 
-## 五、文档维护约定
+## 五、手机端 SFA（sbt 模板订阅）
+
+| 项目 | 值 |
+|---|---|
+| 订阅链接 | `https://sub.180770.xyz/s/7e8f78f1dfb1422b1a50a1ac4e29802c`（Sub-Store） |
+| 模板仓库 | `fbigun/sbt`（GitHub main 为源头）；`v1.14.json` / `v1.15.json` 唯一差异是 TUN `stack`（1.14 mixed / 1.15 已移除），`operate.js` 灌订阅节点 |
+| 手机端形态 | SFA 跑 tun（接口 ETH0，172.19.0.0/30）+ tailscale endpoint `ts-ep`（accept_routes、advertise_exit_node）+ `ts-dns`（MagicDNS）+ fakeip；clash_api `0.0.0.0:9090` |
+| tailnet 正常路径 | DNS 规则 `preferred_by: ts-dns` → ts-dns；路由规则 `preferred_by: ts-ep` → ts-ep，在家在外一致（`preferred_by` 为 1.14 规则项，tailscale 类型匹配 MagicDNS 域名与 peers allowed IPs） |
+
+## 六、文档维护约定
 
 - 只写现态：当前拓扑、配置值与软件列表；不写变更记录、带日期的"已完成 / 已修复 / 裁剪记录"叙述。
 - 历史只留两种形式：现态事实（"三行处于注释状态"）或待办（"残留备份在 `/root/migration-backup-20261031/`，待清理"）；论证放专文，正文只留指针。
